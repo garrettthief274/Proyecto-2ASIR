@@ -1,0 +1,23 @@
+---
+# tasks file for roles/falco
+- name: Añadir repo Falco
+  shell: helm repo add falcosecurity https://falcosecurity.github.io/charts
+
+- name: Actualizar repos Helm
+  shell: helm repo update
+
+- name: Instalar Falco
+  shell: |
+    helm install falco falcosecurity/falco -n falco --create-namespace -f ../kubernetes/security/falco-values.yaml
+  ignore_errors: yes
+
+- name: Esperar pods Falco
+  shell: kubectl get pods -n falco
+  register: falco_pods
+  retries: 20
+  delay: 10
+  until: falco_pods.rc == 0
+
+- name: Mostrar pods Falco
+  debug:
+    var: falco_pods.stdout

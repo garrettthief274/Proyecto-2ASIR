@@ -1,0 +1,21 @@
+---
+# tasks file for roles/nginx
+- name: Aplicar deployment nginx
+  shell: kubectl apply -f roles/nginx/files/nginx-deployment.yaml
+
+- name: Aplicar service nginx
+  shell: kubectl apply -f roles/nginx/files/nginx-service.yaml
+
+- name: Aplicar ingress nginx
+  shell: kubectl apply -f roles/nginx/files/nginx-ingress.yaml
+
+- name: Aplicar network policy nginx
+  shell: kubectl apply -f roles/nginx/files/nginx-networkpolicy.yaml
+
+- name: Verificar deployment nginx
+  shell: kubectl rollout status deployment/nginx
+  register: nginx_status
+
+- name: Mostrar estado nginx
+  debug:
+    var: nginx_status.stdout

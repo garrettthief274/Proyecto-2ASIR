@@ -1,0 +1,39 @@
+---
+# tasks file for roles/docker
+- name: Actualizar repositorios
+  command: sudo apt update
+
+- name: Verificar Docker
+  command: docker --version
+  register: docker_check
+  ignore_errors: yes
+
+- name: Instalar dependencias Docker
+  apt:
+    name:
+      - ca-certificates
+      - curl
+    state: present
+    update_cache: yes
+  become: yes
+  when: docker_check.failed
+
+- name: Instalar Docker
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+  become: yes
+  when: docker_check.failed
+
+- name: Iniciar Docker
+  service:
+    name: docker
+    state: started
+    enabled: yes
+  become: yes
+  when: docker_check.failed

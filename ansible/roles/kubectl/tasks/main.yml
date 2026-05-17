@@ -1,0 +1,18 @@
+---
+# tasks file for roles/kubectl
+- name: Verificar kubectl
+  command: kubectl version --client
+  register: kubectl_check
+  ignore_errors: yes
+
+- name: Mostrar versión kubectl
+  debug:
+    var: kubectl_check.stdout
+
+- name: Descargar kubectl
+  get_url:
+    url: https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl
+    dest: /usr/local/bin/kubectl
+    mode: '0755'
+  become: yes
+  when: kubectl_check.failed

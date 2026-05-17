@@ -1,0 +1,28 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: custom-alerts
+  namespace: monitoring
+
+spec:
+  groups:
+    - name: kubernetes-alerts
+      rules:
+
+        - alert: PodDown
+          expr: up == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Pod caído"
+            description: "Un pod no responde"
+
+        - alert: HighMemoryUsage
+          expr: (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) < 0.2
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Memoria alta"
+            description: "Menos del 20% de RAM disponible"

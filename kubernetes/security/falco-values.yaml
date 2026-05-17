@@ -1,0 +1,44 @@
+tty: true
+
+driver:
+  kind: modern_ebpf
+
+collectors:
+  containerd:
+    enabled: true
+
+falco:
+  jsonOutput: true
+  jsonIncludeOutputProperty: true
+  log_level: info
+
+  grpc:
+    enabled: true
+  grpc_output:
+    enabled: true
+
+falcosidekick:
+  enabled: true
+
+  config:
+    debug: true
+    customfields: "cluster:k3d-soc,environment:lab"
+    minimumpriority: "Notice"
+
+    loki:
+      hostport: "http://loki.logging.svc.cluster.local:3100"
+
+    smtp:
+      hostport: "smtp.serviciodecorreo.es:587"
+      user: "franciscomoreno@ingeniamarket.es"
+      password: "Tintinacio200620172023@_#"
+
+      from: "franciscomoreno@ingeniamarket.es"
+      to: "franciscomoreno@ingeniamarket.es"
+
+      insecure: true
+      tls: true
+
+      authmechanism: "plain"
+
+      outputformat: "html"

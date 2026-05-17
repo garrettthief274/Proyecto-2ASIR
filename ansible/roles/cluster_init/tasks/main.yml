@@ -1,0 +1,62 @@
+---
+# tasks file for roles/cluster_init
+- name: Verificar k3d
+  command: k3d --version
+  register: k3d_check
+  ignore_errors: yes
+
+- name: Instalar k3d
+  shell: |
+    curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+  args:
+    creates: /usr/local/bin/k3d
+  when: k3d_check.failed
+
+- name: Verificar cluster k3d
+  shell: k3d cluster list --no-headers | grep cluster-soc
+  register: cluster_exists
+  ignore_errors: yes
+
+- name: Crear cluster k3d
+  shell: |
+    k3d cluster create cluster-soc --agents 2 -p "80:80@loadbalancer" -p "443:443@loadbalancer" --api-port 6443
+  when: cluster_exists.rc != 0
+
+- name: Crear directorio kube
+  file:
+    path: /home/usuario/.kube
+    state: directory
+    owner: usuario
+    group: usuario
+    mode: '0755'
+
+- name: Borrar kubeconfig anterior
+  file:
+    path: /home/usuario/.kube/config
+    state: absent
+
+- name: Guardar kubeconfig de k3d
+  shell: |
+    k3d kubeconfig write cluster-soc --output /home/usuario/.kube/config
+  become: false
+
+- name: Ajustar permisos kubeconfig
+  file:
+    path: /home/usuario/.kube/config
+    owner: usuario
+    mode: '0600'
+
+- name: Exportar KUBECONFIG en bashrc
+  lineinfile:
+    path: /home/usuario/.bashrc
+    line: 'export KUBECONFIG=$HOME/.kube/config'
+    state: present
+
+- name: Verificar nodos Kubernetes
+  shell: kubectl get nodes
+  register: nodes_status
+  ignore_errors: yes
+
+- name: Mostrar nodos
+  debug:
+    var: nodes_status.stdout

@@ -1,0 +1,54 @@
+---
+# tasks file for roles/monitoring
+- name: Verificar namespace monitoring
+  shell: kubectl get namespace monitoring
+  register: monitoring_ns
+  ignore_errors: yes
+
+- name: Crear namespace monitoring
+  shell: kubectl create namespace monitoring
+  when: monitoring_ns.rc != 0
+
+- name: Verificar Helm release monitoring
+  shell: helm list -n monitoring | grep monitoring
+  register: monitoring_release
+  ignore_errors: yes
+
+- name: Añadir repo Prometheus
+  shell: helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+  when: monitoring_release.rc != 0
+
+- name: Actualizar repos Helm
+  shell: helm repo update
+  when: monitoring_release.rc != 0
+
+- name: Instalar kube-prometheus-stack
+  shell: |
+    helm install monitoring prometheus-community/kube-prometheus-stack -n monitoring
+  when: monitoring_release.rc != 0
+
+- name: Añadir Loki a Grafana
+  shell: |
+    helm upgrade monitoring prometheus-community/kube-prometheus-stack -n monitoring -f ../kubernetes/monitoring/grafana-values.yaml
+
+- name: Verificar regla prometheus
+  shell: |
+    kubectl get prometheusrule custom-alerts -n monitoring
+  register: regla_check
+  ignore_errors: yes
+
+- name: Añadir regla prometheus
+  shell: |
+    kubectl apply -f ../kubernetes/monitoring/alerta-cpu.yaml
+  when: regla_check.failed
+
+- name: Esperar a que Grafana arranque
+  shell: kubectl get pods -n monitoring
+  register: monitoring_pods
+  retries: 20
+  delay: 15
+  until: monitoring_pods.rc == 0
+
+- name: Mostrar pods monitoring
+  debug:
+    var: monitoring_pods.stdout

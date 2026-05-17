@@ -1,0 +1,14 @@
+---
+- hosts: local
+  become: yes
+
+  roles:
+    - docker
+    - cluster_init
+    - kubectl
+    - helm
+    - monitoring
+    - ingress
+    - nginx
+    - falco
+    - logging

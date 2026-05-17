@@ -1,0 +1,22 @@
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        url: http://monitoring-kube-prometheus-prometheus:9090
+        access: proxy
+        isDefault: true
+
+      - name: Loki
+        type: loki
+        url: http://loki.logging.svc.cluster.local:3100
+        access: proxy
+
+grafana:
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      access: proxy
+      url: http://loki.logging.svc.cluster.local:3100
+      isDefault: false

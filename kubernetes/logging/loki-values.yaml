@@ -1,0 +1,32 @@
+promtail:
+  enabled: true
+
+  config:
+    clients:
+      - url: http://loki:3100/loki/api/v1/push
+
+    snippets:
+      extraScrapeConfigs: |
+        - job_name: containers
+          static_configs:
+            - targets:
+                - localhost
+              labels:
+                job: containerlogs
+                __path__: /var/log/containers/*.log
+
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      memory: 128Mi
+
+loki:
+  commonConfig:
+    replication_factor: 1
+
+  storage:
+    type: filesystem
+
+grafana:
+  enabled: false

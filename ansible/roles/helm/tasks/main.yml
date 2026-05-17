@@ -1,0 +1,15 @@
+---
+# tasks file for roles/helm
+- name: Verificar Helm
+  command: helm version
+  register: helm_check
+  ignore_errors: yes
+
+- name: Mostrar versión Helm
+  debug:
+    var: helm_check.stdout
+
+- name: Instalar Helm
+  shell: |
+    curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+  when: helm_check.failed

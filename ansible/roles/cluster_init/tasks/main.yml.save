@@ -1,0 +1,38 @@
+---
+# tasks file for roles/cluster_init
+- name: Verificar k3d
+  command: k3d --version
+  register: k3d_check
+  ignore_errors: yes
+
+- name: Instalar k3d
+  shell: |
+    curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+  args:
+    creates: /usr/local/bin/k3d
+  when: k3d_check.failed
+
+- name: Verificar cluster k3d
+  shell: k3d cluster list --no-headers | grep cluster-soc
+  register: cluster_exists
+  ignore_errors: yes
+
+- name: Mostrar estado cluster
+  debug:
+    var: cluster_exists.stdout
+
+- name: Crear cluster k3d
+  shell: |
+    k3d cluster create cluster-soc --agents 2 -p "80:80@loadbalancer" -p "443:443@loadbalancer"
+  when: cluster_exists.rc != 0
+
+- name: 
+
+- name: Verificar nodos Kubernetes
+  shell: kubectl get nodes
+  register: nodes_status
+  ignore_errors: yes
+
+- name: Mostrar nodos
+  debug:
+    var: nodes_status.stdout
