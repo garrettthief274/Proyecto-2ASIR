@@ -2,38 +2,39 @@
 
 IP_A_BANEAR=$1
 
-# 1. Validar que nos pasen una IP
 if [ -z "$IP_A_BANEAR" ]; then
     echo "[ERROR] No se ha especificado ninguna IP."
     exit 1
 fi
 
-# 2. CONFIGURAR LA LISTA BLANCA
-# Si la IP empieza por 172. (red puente de K3d) o 127. (loopback), NO BANEAR
-if [[ "$IP_A_BANEAR" =~ ^172\. ]] || [[ "$IP_A_BANEAR" =~ ^127\. ]]; then
-    echo "[SEGURIDAD] Intento de baneo abortado: La IP $IP_A_BANEAR pertenece a la infraestructura de K3d/Host."
+echo "[INFO] Procesando IP: $IP_A_BANEAR"
+
+if [[ "$IP_A_BANEAR" =~ ^127\. ]] || \
+   [[ "$IP_A_BANEAR" =~ ^10\. ]] || \
+   [[ "$IP_A_BANEAR" =~ ^192\.168\. ]] || \
+   [[ "$IP_A_BANEAR" =~ ^172\.(1[6-9]|2[0-9]|3[0-1])\. ]]; then
+
+    echo "[SEGURIDAD] IP interna detectada. No se aplicará bloqueo."
+    echo "[INFO] La IP $IP_A_BANEAR pertenece a la infraestructura interna."
+
+    echo "$(date) [SIMULACION] Intento de bloqueo interno detectado: $IP_A_BANEAR" >> /var/log/falco-block.log
+
     exit 0
 fi
 
-# 3. COMPROBAR SI ES UNA IP DE UN POD (Rango 10.42.x.x)
-# Si es una IP de un Pod, aplicamos el bloqueo directo en la red interna de Kubernetes
-if [[ "$IP_A_BANEAR" =~ ^10\.42\. ]]; then
-    echo "[SOC] Atacante detectado dentro del clúster (Pod IP: $IP_A_BANEAR)."
-    echo "[FIREWALL] Aplicando bloqueo en la cadena DOCKER-USER para aislar al Pod..."
+echo "[SOC] Atacante externo detectado: $IP_A_BANEAR"
 
-    # Insertar en iptables de Docker solo si no existe ya
-    iptables -C DOCKER-USER -s "$IP_A_BANEAR" -j DROP 2>/dev/null
-    if [ $? -ne 0 ]; then
-        iptables -I DOCKER-USER -s "$IP_A_BANEAR" -j DROP
-        echo "[FIREWALL] Pod $IP_A_BANEAR completamente aislado."
-    else
-        echo "[FIREWALL] El Pod ya estaba bloqueado."
-    fi
+iptables -C INPUT -s "$IP_A_BANEAR" -j DROP 2>/dev/null
+
+if [ $? -eq 0 ]; then
+    echo "[FIREWALL] La IP ya estaba bloqueada."
     exit 0
 fi
 
-# 4. TRÁFICO EXTERNO (IPs de Internet o de fuera del clúster)
-# Si no es de K3d ni un Pod, es un ataque externo tradicional. Usamos UFW.
-echo "[SOC] Atacante externo detectado (IP: $IP_A_BANEAR)."
-ufw insert 1 deny from "$IP_A_BANEAR" to any
-echo "[FIREWALL] IP externa bloqueada en UFW."
+iptables -I INPUT -s "$IP_A_BANEAR" -j DROP
+
+echo "[FIREWALL] IP externa bloqueada correctamente."
+
+echo "$(date) [BLOQUEO] IP externa bloqueada: $IP_A_BANEAR" >> /var/log/falco-block.log
+
+exit 0
