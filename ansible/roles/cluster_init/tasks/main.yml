@@ -10,7 +10,30 @@
     curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
   args:
     creates: /usr/local/bin/k3d
+  become: yes
   when: k3d_check.failed
+
+- name: Comprobar estado de apache2
+  systemd:
+    name: apache2
+  register: estado_apache2
+  ignore_errors: yes
+
+- name: Parar apache2 y quitar autoinicio
+  systemd:
+    name: apache2
+    state: stopped
+    enabled: false
+  when: estado_apache2.status.ActiveState == "active"
+  become: yes
+  ignore_errors: yes
+
+- name: Aumentar el número de archivos abiertos
+  shell: ulimit -n 65535
+
+- name: Aumentar el número de archivos vigilados
+  shell: sysctl -w fs.inotify.max_user_watches=524288 fs.inotify.max_user_instances=512
+  become: yes
 
 - name: Verificar cluster k3d
   shell: k3d cluster list --no-headers | grep cluster-soc
@@ -24,33 +47,34 @@
 
 - name: Crear directorio kube
   file:
-    path: /home/usuario/.kube
+    path: $HOME/.kube
     state: directory
-    owner: usuario
-    group: usuario
     mode: '0755'
+  become: false
 
 - name: Borrar kubeconfig anterior
   file:
-    path: /home/usuario/.kube/config
+    path: $HOME/.kube/config
     state: absent
+  become: false
 
 - name: Guardar kubeconfig de k3d
   shell: |
-    k3d kubeconfig write cluster-soc --output /home/usuario/.kube/config
+    k3d kubeconfig write cluster-soc --output $HOME/.kube/config
   become: false
 
 - name: Ajustar permisos kubeconfig
   file:
-    path: /home/usuario/.kube/config
-    owner: usuario
+    path: $HOME/.kube/config
     mode: '0600'
+  become: false
 
-- name: Exportar KUBECONFIG en bashrc
+- name: Exportar kubeconfig en bashrc
   lineinfile:
-    path: /home/usuario/.bashrc
+    path: $HOME/.bashrc
     line: 'export KUBECONFIG=$HOME/.kube/config'
     state: present
+  become: false
 
 - name: Verificar nodos Kubernetes
   shell: kubectl get nodes

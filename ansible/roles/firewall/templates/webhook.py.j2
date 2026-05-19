@@ -1,0 +1,36 @@
+from flask import Flask, request
+import subprocess
+
+app = Flask(__name__)
+
+@app.route("/", methods=["POST"])
+def hook():
+    data = request.json
+
+    print(f"[WEBHOOK RECIBIDO] Alerta: {data}", flush=True)
+
+    output = data.get("output", "")
+    ip=None
+
+    if "connection=" in output:
+        try:
+            ip = output.split("connection=")[1].split(":")[0]
+        except:
+            pass
+
+    if ip is None:
+        print("[SOC] La alerta recibida no contiene ninguna IP asociada. No se aplica baneo.")
+        return "OK - No se encuentra IP", 200
+
+    es_ip_interna = (ip.startswith("10.") or ip.startswith("172.") or ip.startswith("192.168.") or ip == "127.0.0.1")
+
+    if es_ip_interna:
+        print(f"[SEGURIDAD] IP {ip} detectada como infraestructura interna. Ignorando baneo estructural.", flush=True)
+        return "OK - IP interna ignorada", 200
+    else:
+        print(f"[ALERTA REAL] IP externa sospechosa detectada: {ip}. Ejecutando baneo...", flush=True)
+        subprocess.run(["/usr/local/bin/falco-ban.sh", ip])
+
+    return "ok"
+
+app.run(host="0.0.0.0", port=5000)

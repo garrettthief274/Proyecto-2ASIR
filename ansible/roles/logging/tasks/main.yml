@@ -18,3 +18,4 @@
   shell: |
     helm install loki grafana/loki-stack -n logging --create-namespace -f ../kubernetes/logging/loki-values.yaml
   when: loki_check.rc ==0
+  ignore_errors: yes

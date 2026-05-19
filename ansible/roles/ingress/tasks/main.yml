@@ -11,49 +11,11 @@
 
 - name: Crear ingress Grafana
   shell: |
-    kubectl apply -f - <<EOF
-    apiVersion: networking.k8s.io/v1
-    kind: Ingress
-    metadata:
-      name: grafana-ingress
-      namespace: monitoring
-    spec:
-      ingressClassName: traefik
-      rules:
-      - host: grafana.local
-        http:
-          paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: monitoring-grafana
-                port:
-                  number: 80
-    EOF
+    kubectl apply -f ../kubernetes/ingress/grafana-ingress.yaml
 
 - name: Crear ingress Prometheus
   shell: |
-    kubectl apply -f - <<EOF
-    apiVersion: networking.k8s.io/v1
-    kind: Ingress
-    metadata:
-      name: prometheus-ingress
-      namespace: monitoring
-    spec:
-      ingressClassName: traefik
-      rules:
-      - host: prometheus.local
-        http:
-          paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: monitoring-kube-prometheus-prometheus
-                port:
-                  number: 9090
-    EOF
+    kubectl apply -f ../kubernetes/ingress/prometheus-ingress.yaml
 
 - name: Verificar ingress
   shell: kubectl get ingress -A

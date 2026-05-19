@@ -1,0 +1,11 @@
+[Unit]
+Description=Falco Webhook
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /opt/falco-webhook.py
+Restart=always
+User=root
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,87 @@
+---
+# tasks file for ansible/roles/firewall
+- name: Instalar Fail2Ban
+  apt:
+    name:
+      - ufw
+      - fail2ban
+      - python3-pip
+    state: present
+    update_cache: yes
+  become: yes
+
+- name: Instalar Flask
+  pip:
+    name: flask
+    executable: pip3
+  become: yes
+
+- name: Permitir SSH
+  ufw:
+    rule: allow
+    port: '22'
+    proto: tcp
+  become: yes
+
+- name: Denegar tráfico entrante por defecto
+  ufw:
+    direction: incoming
+    policy: deny
+  become: yes
+
+- name: Permitir tráfico saliente
+  ufw:
+    direction: outgoing
+    policy: allow
+  become: yes
+
+- name: Permitir tráfico al Webhook de Falco
+  ufw:
+    rule: allow
+    port: '5000'
+    proto: tcp
+  become: yes
+
+- name: Habilitar UFW
+  ufw:
+    state: enabled
+  become: yes
+
+- name: Habilitar Fail2Ban
+  service:
+    name: fail2ban
+    enabled: yes
+    state: started
+  become: yes
+
+- name: Crear script de bloqueo
+  template:
+    src: falco-ban.sh.j2
+    dest: /usr/local/bin/falco-ban.sh
+    mode: '0755'
+  become: yes
+
+- name: Crear webhook Flask
+  template:
+    src: webhook.py.j2
+    dest: /opt/falco-webhook.py
+    mode: '0755'
+  become: yes
+
+- name: Crear servicio systemd
+  template:
+    src: falco-webhook.service.j2
+    dest: /etc/systemd/system/falco-webhook.service
+  become: yes
+
+- name: Recargar systemd
+  systemd:
+    daemon_reload: yes
+  become: yes
+
+- name: Habilitar servicio webhook
+  systemd:
+    name: falco-webhook
+    enabled: yes
+    state: started
+  become: yes

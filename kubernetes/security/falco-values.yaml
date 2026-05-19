@@ -42,3 +42,7 @@ falcosidekick:
       authmechanism: "plain"
 
       outputformat: "html"
+
+    webhook:
+      address: "http://host.k3d.internal:5000/"
+

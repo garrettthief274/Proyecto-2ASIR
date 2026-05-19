@@ -49,6 +49,16 @@
   delay: 15
   until: monitoring_pods.rc == 0
 
+- name: Extraer contraseña de admin de Grafana
+  shell: |
+    kubectl get secret monitoring-grafana -n monitoring -o jsonpath="{.data.admin-password}" | base64 -d
+  register: grafana_admin
+
+- name: Escribir contraseña en un archivo
+  copy:
+    content: "{{ grafana_admin.stdout }}"
+    dest: ../admin_password.txt
+
 - name: Mostrar pods monitoring
   debug:
     var: monitoring_pods.stdout
