@@ -29,12 +29,12 @@ falcosidekick:
       hostport: "http://loki.logging.svc.cluster.local:3100"
 
     smtp:
-      hostport: "smtp.serviciodecorreo.es:587"
-      user: "franciscomoreno@ingeniamarket.es"
-      password: "Tintinacio200620172023@_#"
+      hostport: "URL_SERVIDOR_SMTP:587"
+      user: "CORREO@DOMINIO.ES"
+      password: "CONTRASEÑA_DE_CORREO"
 
-      from: "franciscomoreno@ingeniamarket.es"
-      to: "franciscomoreno@ingeniamarket.es"
+      from: "CORREO@DOMINIO.ES"
+      to: "CORREO@DOMINIO.ES"
 
       insecure: true
       tls: true
